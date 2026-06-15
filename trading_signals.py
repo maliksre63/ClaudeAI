@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-VERSION = "2.5.4"
+VERSION = "2.5.5"
 UPDATE_URL = "https://raw.githubusercontent.com/maliksre63/ClaudeAI/master/trading_signals.py"
 
 import warnings, logging, json, os, random, sys, shutil, subprocess, locale
@@ -684,10 +684,24 @@ def calculate_signals(ticker: str) -> dict:
         ma50 = float(close.rolling(50).mean().iloc[-1])
 
         # Echtzeit-Kurs holen + in EUR umrechnen
+        CURRENCY_MAP = {
+            "005930.KS": "KRW",  # Samsung -> Koreanischer Won
+        }
         try:
             fi = yf.Ticker(ticker).fast_info
             live_price = fi.last_price
-            currency = getattr(fi, "currency", "USD") or "USD"
+
+            # Waehrung: erst aus Map, dann aus fast_info, dann Info-API, Fallback USD
+            currency = CURRENCY_MAP.get(ticker)
+            if not currency:
+                currency = getattr(fi, "currency", None)
+            if not currency:
+                try:
+                    currency = yf.Ticker(ticker).info.get("currency", "USD")
+                except Exception:
+                    currency = "USD"
+            currency = currency or "USD"
+
             if live_price and live_price > 0:
                 price = to_eur(float(live_price), currency)
             else:
