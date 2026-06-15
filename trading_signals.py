@@ -3,12 +3,17 @@
 Trade Signal System - All-in-One Trading Assistant
 """
 
+VERSION = "2.1.0"
+UPDATE_URL = "https://raw.githubusercontent.com/maliksre63/ClaudeAI/master/trading_signals.py"
+
 import warnings
 import logging
 import json
 import os
 import random
 import sys
+import shutil
+import subprocess
 from datetime import datetime, date
 
 warnings.filterwarnings("ignore")
@@ -885,5 +890,60 @@ def main():
             print(f"\n  {Fore.CYAN}Bis morgen! Dein Streak: {u['streak']} Tag(e){Style.RESET_ALL}\n")
             break
 
+# ─────────────────────────────────────────────────────────────────
+#  AUTO-UPDATE
+# ─────────────────────────────────────────────────────────────────
+
+def check_for_update():
+    """Prueft beim Start ob eine neuere Version auf GitHub verfuegbar ist."""
+    try:
+        response = requests.get(UPDATE_URL, timeout=8)
+        if response.status_code != 200:
+            return
+
+        remote_code = response.text
+
+        # Versionsnummer aus dem heruntergeladenen Code lesen
+        remote_version = None
+        for line in remote_code.splitlines():
+            if line.startswith("VERSION = "):
+                remote_version = line.split('"')[1]
+                break
+
+        if not remote_version or remote_version == VERSION:
+            return
+
+        # Versionen vergleichen (z.B. "2.1.0" vs "2.2.0")
+        def ver_tuple(v):
+            return tuple(int(x) for x in v.split("."))
+
+        if ver_tuple(remote_version) <= ver_tuple(VERSION):
+            return
+
+        print(f"\n{Fore.CYAN}  Update verfuegbar: {VERSION} -> {remote_version}{Style.RESET_ALL}")
+        print(f"  Lade neue Version herunter...")
+
+        this_file = os.path.abspath(sys.argv[0])
+        backup    = this_file + ".bak"
+
+        # Backup der aktuellen Version anlegen
+        shutil.copy2(this_file, backup)
+
+        # Neue Version schreiben
+        with open(this_file, "w", encoding="utf-8") as f:
+            f.write(remote_code)
+
+        print(f"  {Fore.GREEN}Update erfolgreich! Starte neu...{Style.RESET_ALL}\n")
+
+        # Neustart
+        subprocess.Popen([sys.executable, this_file] + sys.argv[1:])
+        sys.exit(0)
+
+    except Exception:
+        # Kein Internet oder Fehler -> still weiterlaufen
+        pass
+
+
 if __name__ == "__main__":
+    check_for_update()
     main()
