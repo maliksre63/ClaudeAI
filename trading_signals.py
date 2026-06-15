@@ -3,7 +3,7 @@
 Trade Signal System - All-in-One Trading Assistant
 """
 
-VERSION = "2.3.0"
+VERSION = "2.4.0"
 UPDATE_URL = "https://raw.githubusercontent.com/maliksre63/ClaudeAI/master/trading_signals.py"
 
 import warnings
@@ -751,10 +751,12 @@ def get_T(lang: str) -> dict:
     return TRANSLATIONS.get(lang, TRANSLATIONS["de"])
 
 # =================================================================
-#  DATEI-PFADE
+#  DATEI-PFADE  (AppData - nicht neben der EXE)
 # =================================================================
 
-BASE_DIR  = os.path.dirname(os.path.abspath(sys.argv[0]))
+APP_NAME  = "TradeSignalSystem"
+BASE_DIR  = os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")), APP_NAME)
+os.makedirs(BASE_DIR, exist_ok=True)
 USER_FILE = os.path.join(BASE_DIR, "user_data.json")
 
 # =================================================================
