@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-VERSION = "2.5.0"
+VERSION = "2.5.1"
 UPDATE_URL = "https://raw.githubusercontent.com/maliksre63/ClaudeAI/master/trading_signals.py"
 
 import warnings, logging, json, os, random, sys, shutil, subprocess, locale
@@ -789,7 +789,14 @@ def show_advanced_table(u: dict, title: str, results: list, speculative: bool = 
     buy_list = []
     for name, sig in results:
         if sig is None:
-            tbl.add_row(name, f"[dim]{T(u,'no_data')}[/]", "-", "-", "-", "-")
+            tbl.add_row(
+                name,
+                f"[dim]{T(u,'no_data')}[/]",
+                "[dim]-[/]",
+                "[dim]-[/]",
+                f"[dim]{T(u,'hold')}[/]",
+                "[dim]-[/]",
+            )
             continue
         price = sig["price"]
         rsi = sig["rsi"]
@@ -874,7 +881,10 @@ def show_simple_signals(u: dict, results: list, speculative: bool = False):
             info_text = T(u, "simple_sell")
             hint_text = T(u, "simple_sell_hint")
         else:
-            continue
+            color     = "yellow"
+            sig_text  = f"[bold yellow]-- {T(u,'hold')} --[/]"
+            info_text = T(u, "simple_hold")
+            hint_text = T(u, "simple_hold_hint")
 
         content = (
             f"[bold]{name}[/]\n"
