@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-VERSION = "2.5.3"
+VERSION = "2.5.4"
 UPDATE_URL = "https://raw.githubusercontent.com/maliksre63/ClaudeAI/master/trading_signals.py"
 
 import warnings, logging, json, os, random, sys, shutil, subprocess, locale
@@ -625,6 +625,40 @@ def print_header(title: str):
     console.print(Rule(title, style="cyan"))
 
 # ---------------------------------------------------------------------------
+# Waehrungsumrechnung (Live-Kurse)
+# ---------------------------------------------------------------------------
+_fx_cache = {}
+
+def get_fx_rate(from_currency: str, to_currency: str = "EUR") -> float:
+    """Gibt Live-Wechselkurs zurueck. Cached fuer 60 Sekunden."""
+    import time
+    if from_currency == to_currency:
+        return 1.0
+    key = f"{from_currency}{to_currency}"
+    cached = _fx_cache.get(key)
+    if cached and time.time() - cached[1] < 60:
+        return cached[0]
+    try:
+        symbol = f"{from_currency}{to_currency}=X"
+        fi = yf.Ticker(symbol).fast_info
+        rate = float(fi.last_price)
+        if rate and rate > 0:
+            _fx_cache[key] = (rate, time.time())
+            return rate
+    except Exception:
+        pass
+    # Fallback: bekannte Naeherungen
+    fallbacks = {"USDEUR": 0.92, "KRWEUR": 0.00069, "GBPEUR": 1.17, "JPYEUR": 0.0063}
+    return fallbacks.get(key, 1.0)
+
+def to_eur(price: float, currency: str) -> float:
+    """Rechnet beliebige Waehrung in EUR um."""
+    if not currency or currency == "EUR":
+        return price
+    rate = get_fx_rate(currency, "EUR")
+    return price * rate
+
+# ---------------------------------------------------------------------------
 # Signal engine
 # ---------------------------------------------------------------------------
 def calculate_signals(ticker: str) -> dict:
@@ -649,14 +683,15 @@ def calculate_signals(ticker: str) -> dict:
         ma20 = float(close.rolling(20).mean().iloc[-1])
         ma50 = float(close.rolling(50).mean().iloc[-1])
 
-        # Echtzeit-Kurs holen (sekunden-genau)
+        # Echtzeit-Kurs holen + in EUR umrechnen
         try:
             fi = yf.Ticker(ticker).fast_info
             live_price = fi.last_price
+            currency = getattr(fi, "currency", "USD") or "USD"
             if live_price and live_price > 0:
-                price = float(live_price)
+                price = to_eur(float(live_price), currency)
             else:
-                price = float(close.iloc[-1])
+                price = to_eur(float(close.iloc[-1]), currency)
         except Exception:
             price = float(close.iloc[-1])
 
