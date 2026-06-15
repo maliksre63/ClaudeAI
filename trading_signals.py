@@ -729,33 +729,6 @@ def tutorial_chat(u: dict):
 #  EXE ANLEITUNG
 # ─────────────────────────────────────────────────────────────────
 
-def show_exe_guide():
-    clear()
-    print_header("ALS EXE / APP ERSTELLEN")
-    print("""
-  WINDOWS EXE:
-  ------------
-  1. PyInstaller installieren:
-       pip install pyinstaller
-
-  2. EXE erstellen (alles in einer Datei):
-       pyinstaller --onefile --console trading_signals.py
-
-  3. Die fertige EXE liegt unter:
-       dist\\trading_signals.exe
-
-  4. Einfach doppelklicken - kein Python noetig!
-     (user_data.json wird im selben Ordner gespeichert)
-
-  ANDROID / iOS (fortgeschritten):
-  ---------------------------------
-  Fuer mobile Apps wird eine andere Technologie benoetigt.
-  Empfohlen: Kivy (Python) oder Flutter (Dart).
-  Das ist ein separates Projekt und aktuell in Planung.
-
-  TIPP: Lege die EXE auf deinen Desktop fuer schnellen Zugriff.
-    """)
-    pause()
 
 # ─────────────────────────────────────────────────────────────────
 #  LOGIN / STREAK
@@ -844,7 +817,6 @@ def main():
         print("  [H] Tagesherausforderungen anzeigen")
         print("  [T] Tutorial Chat (FAQ)")
         print("  [P] Profil & Einstellungen")
-        print("  [E] Als EXE erstellen (Anleitung)")
         print("  [0] Beenden")
         divider()
 
@@ -884,8 +856,6 @@ def main():
             tutorial_chat(u)
         elif ch == "P":
             profile_menu(u)
-        elif ch == "E":
-            show_exe_guide()
         elif ch == "0":
             print(f"\n  {Fore.CYAN}Bis morgen! Dein Streak: {u['streak']} Tag(e){Style.RESET_ALL}\n")
             break
