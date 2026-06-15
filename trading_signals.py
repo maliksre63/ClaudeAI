@@ -5,7 +5,9 @@ Analysiert Top 20 Aktien + Kryptos und gibt Kauf/Verkauf-Signale
 """
 
 import warnings
+import logging
 warnings.filterwarnings("ignore")
+logging.getLogger("yfinance").setLevel(logging.CRITICAL)
 
 import yfinance as yf
 import pandas as pd
@@ -41,6 +43,30 @@ TOP20_STOCKS = {
     "Walmart":    "WMT",
     "Mastercard": "MA",
     "Procter&G":  "PG",
+}
+
+# Small-Cap Aktien mit Potenzial (Marktkapital ~50M–5B USD)
+SMALL_CAP_STOCKS = {
+    "SoundHound":     "SOUN",
+    "Joby Aviation":  "JOBY",
+    "Archer Aviation":"ACHR",
+    "Lucid Group":    "LCID",
+    "Cipher Mining":  "CIFR",
+    "Bit Digital":    "BTBT",
+    "Mara Holdings":  "MARA",
+    "Riot Platforms": "RIOT",
+    "Redwire":        "RDW",
+    "Rocket Lab":     "RKLB",
+    "Intuitive Mach": "LUNR",
+    "Ondas Holdings": "ONDS",
+    "ProQR Therap":   "PRQR",
+    "Serve Robotics": "SERV",
+    "Gorilla Tech":   "GRRR",
+    "Quantum Corp":   "QMCO",
+    "Inpixon":        "INPX",
+    "BM Technologies":"BMTX",
+    "Idex Corp":      "IDEX",
+    "Pono Music":     "PNTM",
 }
 
 TOP_CRYPTOS = [
@@ -249,6 +275,69 @@ def analyze_cryptos():
 #  KLEINE KRYPTOS MIT POTENZIAL
 # ─────────────────────────────────────────────
 
+def analyze_small_cap_stocks():
+    print_header("KLEINE AKTIEN MIT POTENZIAL (Spekulativ!)")
+    print(f"{Fore.YELLOW}WARNUNG: Hochspekulativ. Nur mit Kapital investieren, dessen Verlust du verkraften kannst.{Style.RESET_ALL}\n")
+
+    candidates = []
+    for name, ticker in SMALL_CAP_STOCKS.items():
+        result = calculate_signals(ticker)
+        if not result:
+            continue
+
+        price = result["price"]
+        change_5d = result["change_5d"]
+        rsi = result["rsi"]
+        score = result["score"]
+        signal = result["signal"]
+
+        if signal == "KAUFEN" or score >= 2:
+            try:
+                info = yf.Ticker(ticker).fast_info
+                mcap = getattr(info, "market_cap", None) or 0
+            except Exception:
+                mcap = 0
+
+            volatility = abs(change_5d) * 2.5
+            min_gain = max(5, volatility * 0.5)
+            max_gain = volatility * 3.0
+
+            candidates.append({
+                "name": name,
+                "ticker": ticker,
+                "price": price,
+                "mcap": mcap,
+                "change_5d": change_5d,
+                "rsi": rsi,
+                "score": score,
+                "signal": signal,
+                "min_gain": min_gain,
+                "max_gain": max_gain,
+            })
+
+    candidates = sorted(candidates, key=lambda x: -x["score"])[:10]
+
+    if not candidates:
+        print("Keine Kaufkandidaten unter den Small-Cap-Aktien gefunden.")
+        return
+
+    for c in candidates:
+        mcap_str = f"{c['mcap']/1_000_000:.0f} Mio $" if c["mcap"] > 0 else "unbekannt"
+        c5 = c["change_5d"]
+        risk = "SEHR HOCH" if c["score"] < 4 else "HOCH"
+        risk_color = Fore.RED if risk == "SEHR HOCH" else Fore.YELLOW
+
+        print(f"{Fore.CYAN}{c['name']} ({c['ticker']}){Style.RESET_ALL}")
+        print(f"  Preis:        ${c['price']:.4f}")
+        print(f"  Marktkapital: {mcap_str}")
+        print(f"  5-Tage:       {Fore.GREEN if c5 > 0 else Fore.RED}{c5:+.1f}%{Style.RESET_ALL}  |  RSI: {c['rsi']:.0f}")
+        print(f"  Signal:       {signal_color(c['signal'])}")
+        print(f"  Einstieg:     25-500 $  (empfohlen)")
+        print(f"  Potenzial:    +{c['min_gain']:.0f}% bis +{c['max_gain']:.0f}%  (basierend auf Volatilität — KEINE Garantie)")
+        print(f"  Risiko:       {risk_color}{risk}{Style.RESET_ALL}")
+        print()
+
+
 def analyze_small_caps():
     print_header("KLEINE KRYPTOS MIT POTENZIAL (Spekulativ!)")
     print(f"{Fore.YELLOW}WARNUNG: Hochspekulativ. Nur mit Kapital investieren, dessen Verlust du verkraften kannst.{Style.RESET_ALL}\n")
@@ -357,7 +446,8 @@ def main():
     print("  [1] Top 20 Aktien")
     print("  [2] Top Kryptos")
     print("  [3] Kleine Kryptos mit Potenzial")
-    print("  [4] Alles anzeigen")
+    print("  [4] Kleine Aktien mit Potenzial")
+    print("  [5] Alles anzeigen")
     print("  [0] Beenden")
 
     choice = input("\nAuswahl: ").strip()
@@ -369,9 +459,12 @@ def main():
     elif choice == "3":
         analyze_small_caps()
     elif choice == "4":
+        analyze_small_cap_stocks()
+    elif choice == "5":
         analyze_stocks()
         analyze_cryptos()
         analyze_small_caps()
+        analyze_small_cap_stocks()
     elif choice == "0":
         print("Bis bald!")
         return
