@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-VERSION = "2.5.2"
+VERSION = "2.5.3"
 UPDATE_URL = "https://raw.githubusercontent.com/maliksre63/ClaudeAI/master/trading_signals.py"
 
 import warnings, logging, json, os, random, sys, shutil, subprocess, locale
@@ -648,11 +648,20 @@ def calculate_signals(ticker: str) -> dict:
 
         ma20 = float(close.rolling(20).mean().iloc[-1])
         ma50 = float(close.rolling(50).mean().iloc[-1])
-        price = float(close.iloc[-1])
 
-        change_5d = 0.0
-        if len(close) >= 6:
-            change_5d = (price - float(close.iloc[-6])) / float(close.iloc[-6]) * 100
+        # Echtzeit-Kurs holen (sekunden-genau)
+        try:
+            fi = yf.Ticker(ticker).fast_info
+            live_price = fi.last_price
+            if live_price and live_price > 0:
+                price = float(live_price)
+            else:
+                price = float(close.iloc[-1])
+        except Exception:
+            price = float(close.iloc[-1])
+
+        prev_price = float(close.iloc[-6]) if len(close) >= 6 else float(close.iloc[0])
+        change_5d = (price - prev_price) / prev_price * 100 if prev_price != 0 else 0.0
 
         score = 0
         reasons = []
@@ -705,20 +714,28 @@ def calculate_signals(ticker: str) -> dict:
 
 def calculate_crypto_signal(coin_id: str) -> dict:
     try:
-        # Aktuellen Preis + 24h/7d Daten holen
-        markets_url = "https://api.coingecko.com/api/v3/coins/markets"
-        mr = requests.get(markets_url, params={
-            "vs_currency": "eur", "ids": coin_id,
-            "price_change_percentage": "7d"
-        }, timeout=10)
+        # Echtzeit-Kurs via /simple/price (schnellster Endpoint, sekunden-genau)
+        simple_r = requests.get(
+            "https://api.coingecko.com/api/v3/simple/price",
+            params={"ids": coin_id, "vs_currencies": "eur",
+                    "include_24hr_change": "true", "include_last_updated_at": "true"},
+            timeout=8
+        )
         current_price = None
         change_24h = 0.0
         coin_name = coin_id
+        if simple_r.status_code == 200 and coin_id in simple_r.json():
+            sd = simple_r.json()[coin_id]
+            current_price = sd.get("eur")
+            change_24h = sd.get("eur_24h_change") or 0.0
+
+        # Coin-Namen via markets holen
+        markets_url = "https://api.coingecko.com/api/v3/coins/markets"
+        mr = requests.get(markets_url, params={
+            "vs_currency": "eur", "ids": coin_id,
+        }, timeout=8)
         if mr.status_code == 200 and mr.json():
-            md = mr.json()[0]
-            current_price = md.get("current_price")
-            change_24h = md.get("price_change_percentage_24h") or 0.0
-            coin_name = md.get("name", coin_id)
+            coin_name = mr.json()[0].get("name", coin_id)
 
         # Historische Daten fuer Indikatoren
         url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
@@ -799,7 +816,8 @@ def show_advanced_table(u: dict, title: str, results: list, speculative: bool = 
             border_style="red", padding=(0, 2)
         ))
 
-    tbl = Table(title=f"[bold cyan]{title}[/]", show_lines=True, border_style="cyan")
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    tbl = Table(title=f"[bold cyan]{title}[/]  [dim]Kurse: {timestamp} Uhr (live)[/]", show_lines=True, border_style="cyan")
     tbl.add_column("Name", style="white", min_width=14)
     tbl.add_column(T(u, "price_label"), justify="right", min_width=10)
     tbl.add_column("5T%", justify="right", min_width=7)
