@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-VERSION = "2.5.1"
+VERSION = "2.5.2"
 UPDATE_URL = "https://raw.githubusercontent.com/maliksre63/ClaudeAI/master/trading_signals.py"
 
 import warnings, logging, json, os, random, sys, shutil, subprocess, locale
@@ -630,10 +630,13 @@ def print_header(title: str):
 def calculate_signals(ticker: str) -> dict:
     try:
         df = yf.download(ticker, period="3mo", interval="1d", progress=False, auto_adjust=True)
-        if df is None or len(df) < 30:
+        if df is None or df.empty or len(df) < 30:
             return None
         close = df["Close"].squeeze()
-        if close.isnull().all():
+        if close is None or close.isnull().all():
+            return None
+        close = close.dropna()
+        if len(close) < 30:
             return None
 
         rsi_ind = ta.momentum.RSIIndicator(close=close, window=14)
@@ -702,6 +705,22 @@ def calculate_signals(ticker: str) -> dict:
 
 def calculate_crypto_signal(coin_id: str) -> dict:
     try:
+        # Aktuellen Preis + 24h/7d Daten holen
+        markets_url = "https://api.coingecko.com/api/v3/coins/markets"
+        mr = requests.get(markets_url, params={
+            "vs_currency": "eur", "ids": coin_id,
+            "price_change_percentage": "7d"
+        }, timeout=10)
+        current_price = None
+        change_24h = 0.0
+        coin_name = coin_id
+        if mr.status_code == 200 and mr.json():
+            md = mr.json()[0]
+            current_price = md.get("current_price")
+            change_24h = md.get("price_change_percentage_24h") or 0.0
+            coin_name = md.get("name", coin_id)
+
+        # Historische Daten fuer Indikatoren
         url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
         params = {"vs_currency": "eur", "days": "90", "interval": "daily"}
         r = requests.get(url, params=params, timeout=10)
@@ -720,8 +739,9 @@ def calculate_crypto_signal(coin_id: str) -> dict:
         macd_sig_val = float(macd_ind.macd_signal().iloc[-1])
         ma20 = float(close.rolling(20).mean().iloc[-1])
         ma50 = float(close.rolling(50).mean().iloc[-1])
-        price = float(close.iloc[-1])
-        change_5d = (price - float(close.iloc[-6])) / float(close.iloc[-6]) * 100 if len(close) >= 6 else 0.0
+        # Aktuellen Preis bevorzugen, sonst letzten historischen Wert
+        price = float(current_price) if current_price is not None else float(close.iloc[-1])
+        change_5d = (float(close.iloc[-1]) - float(close.iloc[-6])) / float(close.iloc[-6]) * 100 if len(close) >= 6 else change_24h
 
         score = 0
         reasons = []
@@ -764,6 +784,7 @@ def calculate_crypto_signal(coin_id: str) -> dict:
             "signal": signal,
             "score": max(0, score),
             "reasons": reasons,
+            "name": coin_name,
         }
     except Exception:
         return None
@@ -935,7 +956,8 @@ def analyze_crypto(u: dict):
     results = []
     for coin in TOP_CRYPTOS:
         sig = calculate_crypto_signal(coin)
-        name = coin.replace("-", " ").title()
+        # Echten Namen aus API-Antwort nehmen, sonst Coin-ID umwandeln
+        name = sig["name"] if sig and sig.get("name") else coin.replace("-", " ").title()
         results.append((name, sig))
         u["total_signals_viewed"] = u.get("total_signals_viewed", 0) + 1
 
