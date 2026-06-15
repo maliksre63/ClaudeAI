@@ -3,7 +3,7 @@
 Trade Signal System - All-in-One Trading Assistant
 """
 
-VERSION = "2.1.0"
+VERSION = "2.2.0"
 UPDATE_URL = "https://raw.githubusercontent.com/maliksre63/ClaudeAI/master/trading_signals.py"
 
 import warnings
