@@ -1,0 +1,13 @@
+dist-electron/
+dist/
+build/
+node_modules/
+__pycache__/
+*.pyc
+backend/stockly.db
+backend/api.log
+backend/api_err.log
+backend/server.log
+backend/server_err.log
+backend/user_keys.json
+backend/.env

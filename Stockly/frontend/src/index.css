@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* ── Hintergrund: tiefes, elegantes Dunkelbordeaux ── */
+  --bg:     #3d0a14;
+
+  /* ── Karten: warmes Crème ── */
+  --s1:     #b8a89c;
+  --s2:     #b8a89c;
+  --s3:     #b8a89c;
+  --border: rgba(61,10,20,0.14);
+  --bl:     rgba(61,10,20,0.07);
+
+  /* ── Text auf Crème-Karten: dunkles Bordeaux ── */
+  --txt:    #2d0610;
+  --txt2:   rgba(45,6,16,0.75);
+  --txt3:   rgba(45,6,16,0.55);
+
+  /* ── Akzent: mittleres Bordeaux für Buttons/Badges ── */
+  --acc:    #6b1220;
+  --acc-l:  rgba(107,18,32,0.12);
+  --acc-b:  rgba(107,18,32,0.25);
+
+  /* ── Signalfarben: kräftig und auffällig ── */
+  --green:  #065f2e;
+  --green-l:rgba(6,95,46,0.18);
+  --red:    #a01008;
+  --red-l:  rgba(160,16,8,0.18);
+  --amber:  #92400e;
+}
+
+/* ── Dark Navy Theme ─────────────────────────────── */
+[data-theme="navy"] {
+  --bg:     #0a1628;
+  --s1:     #152238;
+  --s2:     #1e3354;
+  --s3:     #1e3354;
+  --border: rgba(255,255,255,0.08);
+  --bl:     rgba(255,255,255,0.04);
+  --txt:    rgba(255,255,255,0.9);
+  --txt2:   rgba(255,255,255,0.6);
+  --txt3:   rgba(255,255,255,0.38);
+  --acc:    #2563eb;
+  --acc-l:  rgba(37,99,235,0.15);
+  --acc-b:  rgba(37,99,235,0.3);
+  --green:  #10b981;
+  --green-l:rgba(16,185,129,0.15);
+  --red:    #ef4444;
+  --red-l:  rgba(239,68,68,0.15);
+  --amber:  #f59e0b;
+}
+
+/* ── Pure Dark Theme ─────────────────────────────── */
+[data-theme="dark"] {
+  --bg:     #0d0d0d;
+  --s1:     #1a1a1a;
+  --s2:     #242424;
+  --s3:     #242424;
+  --border: rgba(255,255,255,0.08);
+  --bl:     rgba(255,255,255,0.04);
+  --txt:    rgba(255,255,255,0.9);
+  --txt2:   rgba(255,255,255,0.55);
+  --txt3:   rgba(255,255,255,0.35);
+  --acc:    #7c3aed;
+  --acc-l:  rgba(124,58,237,0.15);
+  --acc-b:  rgba(124,58,237,0.3);
+  --green:  #10b981;
+  --green-l:rgba(16,185,129,0.15);
+  --red:    #ef4444;
+  --red-l:  rgba(239,68,68,0.15);
+  --amber:  #f59e0b;
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--txt); }
+
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root { height: 100%; width: 100%; text-align: left; margin: 0; border: none; }
+
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.12) transparent; }
+*::-webkit-scrollbar { width: 4px; height: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+input, select, textarea, button { font-family: inherit; font-size: inherit; }
+::placeholder { color: var(--txt3); }
+a { color: inherit; text-decoration: none; }
